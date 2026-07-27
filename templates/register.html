@@ -1,0 +1,36 @@
+{% extends "login_layout.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block form_title %}Create Account{% endblock %}
+
+{% block form_content %}
+<form action="{{ url_for('register') }}" method="post" class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input class="form-control" id="username" name="username" type="text" autocomplete="username" required>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input class="form-control" id="password" name="password" type="password" autocomplete="new-password" required>
+    </div>
+    <div class="mb-3">
+        <label for="confirmation" class="form-label">Confirm Password</label>
+        <input class="form-control" id="confirmation" name="confirmation" type="password" autocomplete="new-password" required>
+    </div>
+    <div class="mb-3">
+        <label for="country" class="form-label">Country</label>
+        <input class="form-control" id="country" name="country" type="text" list="country-list" placeholder="e.g. Brazil" required>
+        <datalist id="country-list">
+            {% for country in countries %}
+            <option value="{{ country }}"></option>
+            {% endfor %}
+        </datalist>
+    </div>
+    <button type="submit" class="btn btn-success w-100">Register</button>
+</form>
+
+<p class="text-center mt-3 mb-0">
+    Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+</p>
+{% endblock %}
