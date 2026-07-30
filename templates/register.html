@@ -5,7 +5,10 @@
 {% block form_title %}Create Account{% endblock %}
 
 {% block form_content %}
-<form action="{{ url_for('register') }}" method="post" class="needs-validation" novalidate>
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
+<form action="/register" method="post" class="needs-validation" novalidate>
     <div class="mb-3">
         <label for="username" class="form-label">Username</label>
         <input class="form-control" id="username" name="username" type="text" autocomplete="username" required>

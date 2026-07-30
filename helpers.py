@@ -8,7 +8,7 @@ from functools import wraps
 
 def load_countries():
     """Load country names from the provided text file."""
-    countries_path = Path(__file__).parent / "countrys.txt"
+    countries_path = Path(__file__).parent / "countries.txt"
     if not countries_path.exists():
         return []
 

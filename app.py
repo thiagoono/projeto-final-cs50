@@ -12,7 +12,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-db = SQL("todolist.db")
+db = SQL("sqlite:///todolist.db")
 
 @app.after_request
 def after_request(response):
@@ -36,28 +36,31 @@ def register():
 
         # Checks if the inputs are valid
         if not username:
-            return apology("must provide username", 400)
+            return render_template("register.html", countries=countries, error="must provide username")
 
         if not password:
-            return apology("must provide password", 400)
+            return render_template("register.html", countries=countries, error="must provide password")
 
         if not confirmation:
-            return apology("must confirm your password", 400)
+            return render_template("register.html", countries=countries, error="must confirm your password")
 
         if not country:
-            return apology("must provide the country")
+            return render_template("register.html", countries=countries, error="must provide the country")
 
         if password != confirmation:
-            return apology("Passwords don't match")
+            return render_template("register.html", countries=countries, error="Passwords don't match")
 
-        # Convert the country name into its country
+        if country not in countries:
+            return render_template("register.html", countries=countries, error="Invalid country name")
+
+        # Convert the country name into its country code
         country_code = countrycode(country, origin="country.name.en.regex", destination="iso3c")[0]
 
         # Checks if the username  already exists
         try:
             db.execute("INSERT INTO users (username, hash, country) VALUES(?, ?, ?)", username, generate_password_hash(password), country_code)
         except ValueError:
-            return apology("Username already exists")
+            return render_template("register.html", countries=countries, error="Username already exists")
 
         # Set the user_id in the user's session
         session["user_id"] = db.execute(
@@ -77,11 +80,11 @@ def login():
     if request.method == "POST":
         # Ensure username was submitted
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            return render_template("login.html", error="must provide username")
 
         # Ensure password was submitted
         elif not request.form.get("password"):
-            return apology("must provide password", 403)
+            return render_template("login.html", error="must provide password")
 
         # Query database for username
         rows = db.execute(
@@ -92,7 +95,7 @@ def login():
         if len(rows) != 1 or not check_password_hash(
             rows[0]["hash"], request.form.get("password")
         ):
-            return apology("invalid username and/or password", 403)
+            return render_template("login.html", error="invalid username and/or password")
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
