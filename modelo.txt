@@ -19,7 +19,7 @@ Terá uma aba para criar tarefas que se repetirão. Neste caso, deverá ser feit
 Além disso, haverá uma página onde será possível ver todas as tarefas criadas em uma linha do tempo e editá-las, além disso, haverá sugestões do chatGPT caso ele verifique se tem algum dia com muitas tarefas (mostrar tbm na nav e permitir que o usuário marque o aviso como lido)
 
 Database:
-users: ID, username, hash, country
+users: ID, username, hash, country DONE
 registered-tasks: ID, user_id, title, description, date
 recurrent-tasks: ID, user_id, title, description, recurrency, exceptions
 recurrent-tasks-deleted: recurrent_task_id, user_id

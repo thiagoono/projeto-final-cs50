@@ -50,14 +50,14 @@ def register():
         if password != confirmation:
             return apology("Passwords don't match")
 
-        #TODO: Convert the country name into its country
+        # Convert the country name into its country
         country_code = countrycode(country, origin="country.name.en.regex", destination="iso3c")[0]
 
         # Checks if the username  already exists
         try:
-            #db.execute("INSERT INTO users (username, hash, country) VALUES(?, ?, ?)", username, generate_password_hash(password), country_code)
+            db.execute("INSERT INTO users (username, hash, country) VALUES(?, ?, ?)", username, generate_password_hash(password), country_code)
         except ValueError:
-            #return apology("Username already exists")
+            return apology("Username already exists")
 
         # Set the user_id in the user's session
         session["user_id"] = db.execute(
