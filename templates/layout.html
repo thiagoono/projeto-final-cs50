@@ -25,6 +25,38 @@
             .content {
                 padding: 2rem;
             }
+            .mobile-nav {
+                display: none;
+            }
+
+            @media (max-width: 767.98px) {
+                .sidebar {
+                    display: none !important;
+                }
+                .content {
+                    padding: 1rem 1rem 5.5rem;
+                }
+                .mobile-nav {
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                    position: fixed;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: #212529;
+                    padding: 0.75rem 0.5rem;
+                    z-index: 1000;
+                }
+                .mobile-nav a {
+                    color: #dee2e6;
+                    text-decoration: none;
+                    font-size: 1.1rem;
+                }
+                .mobile-nav a:hover {
+                    color: white;
+                }
+            }
         </style>
     </head>
     <body>
@@ -49,6 +81,14 @@
                             <a class="nav-link" href="{{ url_for('profile') }}">Profile</a>
                         </li>
                     </ul>
+                </nav>
+
+                <nav class="mobile-nav" aria-label="Mobile navigation">
+                    <a href="{{ url_for('index') }}" title="Home">🏠</a>
+                    <a href="{{ url_for('new_task') }}" title="New task">➕</a>
+                    <a href="{{ url_for('timeline') }}" title="Timeline">📅</a>
+                    <a href="{{ url_for('recurring_tasks') }}" title="Recurring tasks">🔁</a>
+                    <a href="{{ url_for('profile') }}" title="Profile">👤</a>
                 </nav>
 
                 <main class="col-md-9 col-lg-10 content">
