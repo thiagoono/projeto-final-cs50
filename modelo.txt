@@ -2,7 +2,7 @@ A página será um todo-list inteligente.
 
 Primeiro haverá uma tela de login com uma maneira de criar uma nova conta.
 Na criação da conta deve ser possível registrar o país
-DONE (falta só criar o banco de dados para finalizar)
+DONE
 
 O index.html terá todas as tarefas do dia, contendo uma linha do tempo.
 Além disso, haverá um nav onde será possível acessar todas as outras abas da página.
