@@ -120,7 +120,39 @@ def logout():
 @app.route("/")
 def index():
     """Show the home page"""
-    if session["user_id"] not in session:
+    if "user_id" not in session:
         return redirect("/login")
 
     return render_template("index.html")
+
+@app.route("/new-task")
+def new_task():
+    """Show the new task page"""
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template("new_task.html")
+
+@app.route("/timeline")
+def timeline():
+    """Show the timeline page"""
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template("timeline.html")
+
+@app.route("/recurring-tasks")
+def recurring_tasks():
+    """Show the recurring tasks page"""
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template("recurring_tasks.html")
+
+@app.route("/profile")
+def profile():
+    """Show the profile page"""
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template("profile.html")
