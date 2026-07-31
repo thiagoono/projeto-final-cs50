@@ -4,7 +4,7 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, load_countries
+from helpers import apology, load_countries, login_required
 
 app = Flask(__name__)
 
@@ -118,6 +118,7 @@ def logout():
     return redirect("/login")
 
 @app.route("/")
+@login_required
 def index():
     """Show the home page"""
     if "user_id" not in session:
@@ -126,6 +127,7 @@ def index():
     return render_template("index.html")
 
 @app.route("/new-task")
+@login_required
 def new_task():
     """Show the new task page"""
     if "user_id" not in session:
@@ -134,6 +136,7 @@ def new_task():
     return render_template("new_task.html")
 
 @app.route("/timeline")
+@login_required
 def timeline():
     """Show the timeline page"""
     if "user_id" not in session:
@@ -142,6 +145,7 @@ def timeline():
     return render_template("timeline.html")
 
 @app.route("/recurring-tasks")
+@login_required
 def recurring_tasks():
     """Show the recurring tasks page"""
     if "user_id" not in session:
@@ -150,6 +154,7 @@ def recurring_tasks():
     return render_template("recurring_tasks.html")
 
 @app.route("/profile")
+@login_required
 def profile():
     """Show the profile page"""
     if "user_id" not in session:

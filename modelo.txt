@@ -20,6 +20,7 @@ Além disso, haverá uma página onde será possível ver todas as tarefas criad
 
 Database:
 users: ID, username, hash, country DONE
-registered-tasks: ID, user_id, title, description, date
+registered-tasks: ID, user_id, title, description, time
 recurrent-tasks: ID, user_id, title, description, recurrency, exceptions
 recurrent-tasks-deleted: recurrent_task_id, user_id
+days: ID, task_id, year, month, day
