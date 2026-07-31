@@ -128,9 +128,14 @@ def index():
     else:
         selected_date = datetime.strptime(selected_date, "%Y-%m-%d")
 
-    selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    selected_date = selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    tasks = db.execute("SELECT title, time FROM registered_tasks WHERE user_id = ? AND time > ? AND time < ? ORDER BY time ASC", session["user_id"], selected_date, selected_date + timedelta(days=1))
+    tasks = db.execute(
+        "SELECT id, title, description, time FROM registered_tasks WHERE user_id = ? AND time > ? AND time < ? ORDER BY time ASC",
+        session["user_id"],
+        selected_date,
+        selected_date + timedelta(days=1),
+    )
 
     for task in tasks:
         task["time"] = datetime.strptime(task["time"], "%Y-%m-%d %H:%M:%S")
@@ -138,7 +143,22 @@ def index():
 
     selected_date = selected_date.strftime("%Y-%m-%d")
 
-    return render_template("index.html", tasks=tasks, selected_date=selected_date)
+    selected_task_id = request.args.get("task")
+    selected_task = None
+
+    if selected_task_id:
+        task_rows = db.execute(
+            "SELECT id, title, description, time FROM registered_tasks WHERE id = ? AND user_id = ?",
+            selected_task_id,
+            session["user_id"],
+        )
+
+        if task_rows:
+            selected_task = task_rows[0]
+            selected_task["time"] = datetime.strptime(selected_task["time"], "%Y-%m-%d %H:%M:%S")
+            selected_task["time"] = selected_task["time"].strftime("%d/%m/%Y %H:%M")
+
+    return render_template("index.html", tasks=tasks, selected_date=selected_date, selected_task=selected_task, path=request.path)
 
 @app.route("/new-task")
 @login_required
@@ -167,3 +187,19 @@ def profile():
     """Show the profile page"""
 
     return render_template("profile.html")
+
+@app.route("/action")
+@login_required
+def action():
+    """Delete or edit"""
+
+    path = request.form.get("path")
+    task_id = request.form.get("task_id")
+
+    action = request.form.get("action")
+    if action == "delete":
+        db.execute("DELETE FROM registered_tasks WHERE user_id = ? AND id = ?", session["user_id"], task_id)
+    elif action == "edit":
+        #TODO
+
+    return redirect(path)

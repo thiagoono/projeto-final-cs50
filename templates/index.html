@@ -29,14 +29,45 @@
         <h5 class="card-title">Timeline</h5>
         <div class="mt-4">
             {% for task in tasks %}
-                <div class="border-start border-3 ps-3 mb-3">
-                    <h6 class="mb-1">{{ task.time }}</h6>
-                    <p class="mb-0">{{ task.title }}</p>
-                </div>
+                <form action="/" method="GET" class="border-start border-3 ps-3 mb-3">
+                    <input type="hidden" name="task" value="{{ task.id }}">
+                    <button type="submit" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer; text-align: left; width: 100%;">
+                        <h6 class="mb-1">{{ task.time }}</h6>
+                        <p class="mb-0">{{ task.title }}</p>
+                    </button>
+                </form>
             {% else %}
                 <p class="text-muted">No tasks for this day.</p>
             {% endfor %}
         </div>
     </div>
 </div>
+
+{% if selected_task %}
+    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style="background: rgba(0, 0, 0, 0.35); z-index: 1050;">
+        <div class="card shadow-lg border-0" style="width: min(92vw, 480px);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">Task details</h5>
+                    <a href="{{ url_for('index', date=selected_date) }}" class="btn-close" aria-label="Close"></a>
+                </div>
+
+                <h4 class="mb-2">{{ selected_task.title }}</h4>
+                <p class="text-muted mb-3">{{ selected_task.description or 'No description provided.' }}</p>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+                    <span class="badge bg-primary-subtle text-primary-emphasis">{{ selected_task.time }}</span>
+                    <div class="d-flex gap-2">
+                        <form action="/action" method="post">
+                            <input type="hidden" name="path" value="{{ path }}">
+                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                            <button type="button" name="action" value="delete" class="btn btn-outline-danger btn-sm">Delete</button>
+                            <button type="button" name="action" value="edit" class="btn btn-outline-primary btn-sm">Edit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
 {% endblock %}
