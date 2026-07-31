@@ -5,32 +5,37 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-1">Today's tasks</h2>
-        <p class="text-muted mb-0">Here you can keep track of what you need to do today.</p>
+        <h2 class="mb-1">Tasks for {{ selected_date }}</h2>
+        <p class="text-muted mb-0">Choose another day to see that day's tasks.</p>
     </div>
     <a href="{{ url_for('new_task') }}" class="btn btn-primary">New task</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="d-flex gap-2 align-items-end">
+            <div>
+                <label for="date" class="form-label">Select day</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ selected_date }}">
+            </div>
+            <button type="submit" class="btn btn-outline-secondary">Show</button>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Today</a>
+        </form>
+    </div>
 </div>
 
 <div class="card shadow-sm">
     <div class="card-body">
         <h5 class="card-title">Timeline</h5>
         <div class="mt-4">
-            <div class="border-start border-3 ps-3 mb-3">
-                <h6 class="mb-1">09:00</h6>
-                <p class="mb-0">Study for class</p>
-            </div>
-            <div class="border-start border-3 ps-3 mb-3">
-                <h6 class="mb-1">12:30</h6>
-                <p class="mb-0">Lunch</p>
-            </div>
-            <div class="border-start border-3 ps-3 mb-3">
-                <h6 class="mb-1">14:00</h6>
-                <p class="mb-0">Work on the project</p>
-            </div>
-            <div class="border-start border-3 ps-3 mb-0">
-                <h6 class="mb-1">20:00</h6>
-                <p class="mb-0">Relax and review the day</p>
-            </div>
+            {% for task in tasks %}
+                <div class="border-start border-3 ps-3 mb-3">
+                    <h6 class="mb-1">{{ task.time }}</h6>
+                    <p class="mb-0">{{ task.title }}</p>
+                </div>
+            {% else %}
+                <p class="text-muted">No tasks for this day.</p>
+            {% endfor %}
         </div>
     </div>
 </div>

@@ -1,5 +1,6 @@
 from countrycode import countrycode
 from cs50 import SQL
+from datetime import datetime, timedelta
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -121,17 +122,28 @@ def logout():
 @login_required
 def index():
     """Show the home page"""
-    if "user_id" not in session:
-        return redirect("/login")
+    selected_date = request.args.get("date")
+    if not selected_date:
+        selected_date = datetime.now()
+    else:
+        selected_date = datetime.strptime(selected_date, "%Y-%m-%d")
 
-    return render_template("index.html")
+    selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    tasks = db.execute("SELECT title, time FROM registered_tasks WHERE user_id = ? AND time > ? AND time < ? ORDER BY time ASC", session["user_id"], selected_date, selected_date + timedelta(days=1))
+
+    for task in tasks:
+        task["time"] = datetime.strptime(task["time"], "%Y-%m-%d %H:%M:%S")
+        task["time"] = task["time"].strftime("%H:%M")
+
+    selected_date = selected_date.strftime("%Y-%m-%d")
+
+    return render_template("index.html", tasks=tasks, selected_date=selected_date)
 
 @app.route("/new-task")
 @login_required
 def new_task():
     """Show the new task page"""
-    if "user_id" not in session:
-        return redirect("/login")
 
     return render_template("new_task.html")
 
@@ -139,8 +151,6 @@ def new_task():
 @login_required
 def timeline():
     """Show the timeline page"""
-    if "user_id" not in session:
-        return redirect("/login")
 
     return render_template("timeline.html")
 
@@ -148,8 +158,6 @@ def timeline():
 @login_required
 def recurring_tasks():
     """Show the recurring tasks page"""
-    if "user_id" not in session:
-        return redirect("/login")
 
     return render_template("recurring_tasks.html")
 
@@ -157,7 +165,5 @@ def recurring_tasks():
 @login_required
 def profile():
     """Show the profile page"""
-    if "user_id" not in session:
-        return redirect("/login")
 
     return render_template("profile.html")
