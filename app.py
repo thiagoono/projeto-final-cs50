@@ -1,7 +1,7 @@
 from countrycode import countrycode
 from cs50 import SQL
 from datetime import datetime, timedelta
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -188,18 +188,23 @@ def profile():
 
     return render_template("profile.html")
 
-@app.route("/action")
+@app.route("/action", methods=["POST"])
 @login_required
 def action():
     """Delete or edit"""
-
     path = request.form.get("path")
     task_id = request.form.get("task_id")
+    date = request.form.get("date")
 
     action = request.form.get("action")
     if action == "delete":
         db.execute("DELETE FROM registered_tasks WHERE user_id = ? AND id = ?", session["user_id"], task_id)
     elif action == "edit":
-        #TODO
+        ...
+    else:
+        return apology("Invalid action", 400)
 
-    return redirect(path)
+    if path == "/":
+        path = "index"
+
+    return redirect(url_for(path, date=date))

@@ -30,6 +30,7 @@
         <div class="mt-4">
             {% for task in tasks %}
                 <form action="/" method="GET" class="border-start border-3 ps-3 mb-3">
+                    <input type="hidden" name="date" value="{{ selected_date }}">
                     <input type="hidden" name="task" value="{{ task.id }}">
                     <button type="submit" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer; text-align: left; width: 100%;">
                         <h6 class="mb-1">{{ task.time }}</h6>
@@ -60,9 +61,10 @@
                     <div class="d-flex gap-2">
                         <form action="/action" method="post">
                             <input type="hidden" name="path" value="{{ path }}">
-                            <input type="hidden" name="task_id" value="{{ task.id }}">
-                            <button type="button" name="action" value="delete" class="btn btn-outline-danger btn-sm">Delete</button>
-                            <button type="button" name="action" value="edit" class="btn btn-outline-primary btn-sm">Edit</button>
+                            <input type="hidden" name="task_id" value="{{ selected_task.id }}">
+                            <input type="hidden" name="date" value="{{ selected_date }}">
+                            <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm">Delete</button>
+                            <button type="submit" name="action" value="edit" class="btn btn-outline-primary btn-sm">Edit</button>
                         </form>
                     </div>
                 </div>
