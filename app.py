@@ -7,6 +7,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, load_countries, login_required
 
+import re
+
 app = Flask(__name__)
 
 app.config["SESSION_PERMANENT"] = False
@@ -156,6 +158,7 @@ def index():
         if task_rows:
             selected_task = task_rows[0]
             selected_task["time"] = datetime.strptime(selected_task["time"], "%Y-%m-%d %H:%M:%S")
+            selected_task["time_iso"] = selected_task["time"].isoformat(timespec='minutes')
             selected_task["time"] = selected_task["time"].strftime("%d/%m/%Y %H:%M")
 
     return render_template("index.html", tasks=tasks, selected_date=selected_date, selected_task=selected_task, path=request.path)
@@ -198,9 +201,30 @@ def action():
 
     action = request.form.get("action")
     if action == "delete":
-        db.execute("DELETE FROM registered_tasks WHERE user_id = ? AND id = ?", session["user_id"], task_id)
+        db.execute("DELETE FROM registered_tasks WHERE id = ?", task_id)
     elif action == "edit":
-        ...
+        title = request.form.get("title")
+        description = request.form.get("description")
+        time = request.form.get("time")
+
+        if not title:
+            return apology("must provide title", 400)
+
+        if not time:
+            return apology("must provide time", 400)
+
+        try:
+            time = datetime.fromisoformat(time)
+        except ValueError:
+            return apology("Invalid time format", 400)
+
+        db.execute(
+            "UPDATE registered_tasks SET title = ?, description = ?, time = ? WHERE id = ?",
+            title,
+            description,
+            time,
+            task_id,
+        )
     else:
         return apology("Invalid action", 400)
 
