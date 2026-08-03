@@ -163,10 +163,36 @@ def index():
 
     return render_template("index.html", tasks=tasks, selected_date=selected_date, selected_task=selected_task, path=request.path)
 
-@app.route("/new-task")
+@app.route("/new-task", methods=["GET", "POST"])
 @login_required
 def new_task():
-    """Show the new task page"""
+    """Show the new task page or create a new task."""
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        description = request.form.get("description")
+        time = request.form.get("time")
+
+        if not title:
+            return apology("must provide title", 400)
+
+        if not time:
+            return apology("must provide time", 400)
+
+        try:
+            time = datetime.fromisoformat(time)
+        except ValueError:
+            return apology("Invalid time format", 400)
+
+        db.execute(
+            "INSERT INTO registered_tasks (user_id, title, description, time) VALUES(?, ?, ?, ?)",
+            session["user_id"],
+            title,
+            description,
+            time,
+        )
+
+        return redirect(url_for("index"))
 
     return render_template("new_task.html")
 
