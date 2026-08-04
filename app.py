@@ -133,15 +133,18 @@ def index():
     selected_date = selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
     tasks = db.execute(
-        "SELECT id, title, description, time FROM registered_tasks WHERE user_id = ? AND time > ? AND time < ? ORDER BY time ASC",
+        "SELECT id, title, description, start_time, end_time FROM registered_tasks WHERE user_id = ? AND start_time >= ? AND end_time <= ? ORDER BY start_time ASC",
         session["user_id"],
         selected_date,
         selected_date + timedelta(days=1),
     )
 
     for task in tasks:
-        task["time"] = datetime.strptime(task["time"], "%Y-%m-%d %H:%M:%S")
-        task["time"] = task["time"].strftime("%H:%M")
+        task["start_time"] = datetime.strptime(task["start_time"], "%Y-%m-%d %H:%M")
+        task["start_time"] = task["start_time"].strftime("%H:%M")
+
+        task["end_time"] = datetime.strptime(task["end_time"], "%Y-%m-%d %H:%M")
+        task["end_time"] = task["end_time"].strftime("%H:%M")
 
     selected_date = selected_date.strftime("%Y-%m-%d")
 
@@ -150,16 +153,19 @@ def index():
 
     if selected_task_id:
         task_rows = db.execute(
-            "SELECT id, title, description, time FROM registered_tasks WHERE id = ? AND user_id = ?",
-            selected_task_id,
-            session["user_id"],
+            "SELECT id, title, description, start_time, end_time FROM registered_tasks WHERE id = ?",
+            selected_task_id
         )
 
         if task_rows:
             selected_task = task_rows[0]
-            selected_task["time"] = datetime.strptime(selected_task["time"], "%Y-%m-%d %H:%M:%S")
-            selected_task["time_iso"] = selected_task["time"].isoformat(timespec='minutes')
-            selected_task["time"] = selected_task["time"].strftime("%d/%m/%Y %H:%M")
+            selected_task["start_time"] = datetime.strptime(selected_task["start_time"], "%Y-%m-%d %H:%M")
+            selected_task["start_time_iso"] = selected_task["start_time"].isoformat(timespec='minutes')
+            selected_task["start_time"] = selected_task["start_time"].strftime("%d/%m/%Y %H:%M")
+
+            selected_task["end_time"] = datetime.strptime(selected_task["end_time"], "%Y-%m-%d %H:%M")
+            selected_task["end_time_iso"] = selected_task["end_time"].isoformat(timespec='minutes')
+            selected_task["end_time"] = selected_task["end_time"].strftime("%d/%m/%Y %H:%M")
 
     return render_template("index.html", tasks=tasks, selected_date=selected_date, selected_task=selected_task, path=request.path)
 
@@ -171,25 +177,32 @@ def new_task():
     if request.method == "POST":
         title = request.form.get("title")
         description = request.form.get("description")
-        time = request.form.get("time")
+        start_time = request.form.get("start_time")
+        end_time = request.form.get("end_time")
 
         if not title:
             return apology("must provide title", 400)
 
-        if not time:
-            return apology("must provide time", 400)
+        if not start_time or not end_time:
+            return apology("must provide start and end time", 400)
 
         try:
-            time = datetime.fromisoformat(time)
+            start_time = datetime.fromisoformat(start_time)
+        except ValueError:
+            return apology("Invalid time format", 400)
+
+        try:
+            end_time = datetime.fromisoformat(end_time)
         except ValueError:
             return apology("Invalid time format", 400)
 
         db.execute(
-            "INSERT INTO registered_tasks (user_id, title, description, time) VALUES(?, ?, ?, ?)",
+            "INSERT INTO registered_tasks (user_id, title, description, start_time, end_time) VALUES(?, ?, ?, ?, ?)",
             session["user_id"],
             title,
             description,
-            time,
+            start_time,
+            end_time,
         )
 
         return redirect(url_for("index"))
@@ -231,24 +244,27 @@ def action():
     elif action == "edit":
         title = request.form.get("title")
         description = request.form.get("description")
-        time = request.form.get("time")
+        start_time = request.form.get("start_time")
+        end_time = request.form.get("end_time")
 
         if not title:
             return apology("must provide title", 400)
 
-        if not time:
-            return apology("must provide time", 400)
+        if not start_time or not end_time:
+            return apology("must provide start and end time", 400)
 
         try:
-            time = datetime.fromisoformat(time)
+            start_time = datetime.fromisoformat(start_time)
+            end_time = datetime.fromisoformat(end_time)
         except ValueError:
             return apology("Invalid time format", 400)
 
         db.execute(
-            "UPDATE registered_tasks SET title = ?, description = ?, time = ? WHERE id = ?",
+            "UPDATE registered_tasks SET title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ?",
             title,
             description,
-            time,
+            start_time,
+            end_time,
             task_id,
         )
     else:

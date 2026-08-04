@@ -33,7 +33,7 @@
                     <input type="hidden" name="date" value="{{ selected_date }}">
                     <input type="hidden" name="task" value="{{ task.id }}">
                     <button type="submit" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer; text-align: left; width: 100%;">
-                        <h6 class="mb-1">{{ task.time }}</h6>
+                        <h6 class="mb-1">{{ task.start_time }} - {{ task.end_time }}</h6>
                         <p class="mb-0">{{ task.title }}</p>
                     </button>
                 </form>
@@ -57,7 +57,7 @@
                 <p class="text-muted mb-3">{{ selected_task.description or 'No description provided.' }}</p>
 
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
-                    <span class="badge bg-primary-subtle text-primary-emphasis">{{ selected_task.time }}</span>
+                    <span class="badge bg-primary-subtle text-primary-emphasis">{{ selected_task.start_time }} - {{ selected_task.end_time }}</span>
                     <div class="d-flex gap-2">
                         <input type="hidden" name="path" value="{{ path }}">
                         <input type="hidden" name="task_id" value="{{ selected_task.id }}">
@@ -90,8 +90,15 @@
                                 <input type="text" class="form-control form-control-lg mb-2" name="title" value="{{ selected_task.title|e }}">
                                 <textarea class="form-control text-muted mb-3" name="description" rows="3">{{ selected_task.description or '' }}</textarea>
 
+                                <input type="hidden" name="time" id="edit-time">
+
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
-                                    <input type="datetime-local" step="60" class="form-control form-control-sm" name="time" value="{{ selected_task.time_iso }}" style="max-width: 240px;">
+                                    <div class="d-flex flex-column gap-2" style="max-width: 240px;">
+                                        <label class="form-label mb-0">Start time</label>
+                                        <input type="datetime-local" step="60" class="form-control form-control-sm" id="edit-start-time" name="start_time" value="{{ selected_task.end_time_iso }}">
+                                        <label class="form-label mb-0">End time</label>
+                                        <input type="datetime-local" step="60" class="form-control form-control-sm" id="edit-end-time" name="end_time" value="{{ selected_task.end_time_iso }}">
+                                    </div>
                                     <div class="d-flex gap-2">
                                         <input type="hidden" name="path" value="{{ path }}">
                                         <input type="hidden" name="task_id" value="{{ selected_task.id }}">
