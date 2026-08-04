@@ -181,9 +181,11 @@ def new_task():
         end_time = request.form.get("end_time")
 
         if not title:
+            # HERE
             return apology("must provide title", 400)
 
         if not start_time or not end_time:
+            # HERE
             return apology("must provide start and end time", 400)
 
         try:
@@ -195,6 +197,25 @@ def new_task():
             end_time = datetime.fromisoformat(end_time)
         except ValueError:
             return apology("Invalid time format", 400)
+
+        if start_time >= end_time:
+            # HERE
+            return apology("Start time must be before end time", 400)
+
+        search_existing_tasks = db.execute(
+            "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
+            session["user_id"],
+            start_time,
+            start_time,
+            end_time,
+            end_time,
+            start_time,
+            end_time,
+        )
+
+        if search_existing_tasks:
+            # HERE
+            return apology("Task conflicts with existing task", 400)
 
         db.execute(
             "INSERT INTO registered_tasks (user_id, title, description, start_time, end_time) VALUES(?, ?, ?, ?, ?)",
@@ -248,9 +269,11 @@ def action():
         end_time = request.form.get("end_time")
 
         if not title:
+            # HERE
             return apology("must provide title", 400)
 
         if not start_time or not end_time:
+            # HERE
             return apology("must provide start and end time", 400)
 
         try:
@@ -258,6 +281,25 @@ def action():
             end_time = datetime.fromisoformat(end_time)
         except ValueError:
             return apology("Invalid time format", 400)
+
+        if start_time >= end_time:
+            # HERE
+            return apology("Start time must be before end time", 400)
+
+        search_existing_tasks = db.execute(
+            "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
+            session["user_id"],
+            start_time,
+            start_time,
+            end_time,
+            end_time,
+            start_time,
+            end_time,
+        )
+
+        if search_existing_tasks:
+            # HERE
+            return apology("Task conflicts with existing task", 400)
 
         db.execute(
             "UPDATE registered_tasks SET title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ?",
