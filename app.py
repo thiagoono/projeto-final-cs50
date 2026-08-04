@@ -1,7 +1,7 @@
 from countrycode import countrycode
 from cs50 import SQL
 from datetime import datetime, timedelta
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -167,7 +167,14 @@ def index():
             selected_task["end_time_iso"] = selected_task["end_time"].isoformat(timespec='minutes')
             selected_task["end_time"] = selected_task["end_time"].strftime("%d/%m/%Y %H:%M")
 
-    return render_template("index.html", tasks=tasks, selected_date=selected_date, selected_task=selected_task, path=request.path)
+    return render_template(
+        "index.html",
+        tasks=tasks,
+        selected_date=selected_date,
+        selected_task=selected_task,
+        path=request.path,
+        error=request.args.get("error"),
+    )
 
 @app.route("/new-task", methods=["GET", "POST"])
 @login_required
@@ -182,11 +189,11 @@ def new_task():
 
         if not title:
             # HERE
-            return apology("must provide title", 400)
+            return redirect(url_for("new_task", error="must provide title"))
 
         if not start_time or not end_time:
             # HERE
-            return apology("must provide start and end time", 400)
+            return redirect(url_for("new_task", error="must provide start and end time"))
 
         try:
             start_time = datetime.fromisoformat(start_time)
@@ -200,7 +207,7 @@ def new_task():
 
         if start_time >= end_time:
             # HERE
-            return apology("Start time must be before end time", 400)
+            return redirect(url_for("new_task", error="Start time must be before end time"))
 
         search_existing_tasks = db.execute(
             "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
@@ -215,7 +222,10 @@ def new_task():
 
         if search_existing_tasks:
             # HERE
-            return apology("Task conflicts with existing task", 400)
+            return redirect(url_for("new_task", error="Task conflicts with existing task"))
+
+        start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        end_time = end_time.strftime("%Y-%m-%d %H:%M")
 
         db.execute(
             "INSERT INTO registered_tasks (user_id, title, description, start_time, end_time) VALUES(?, ?, ?, ?, ?)",
@@ -228,7 +238,7 @@ def new_task():
 
         return redirect(url_for("index"))
 
-    return render_template("new_task.html")
+    return render_template("new_task.html", error=request.args.get("error"))
 
 @app.route("/timeline")
 @login_required
@@ -260,6 +270,9 @@ def action():
     date = request.form.get("date")
 
     action = request.form.get("action")
+    redirect_endpoint = "index" if path == "/" else ((path or "").lstrip("/") or "index")
+    redirect_target = url_for(redirect_endpoint, date=date, task=task_id)
+
     if action == "delete":
         db.execute("DELETE FROM registered_tasks WHERE id = ?", task_id)
     elif action == "edit":
@@ -270,11 +283,11 @@ def action():
 
         if not title:
             # HERE
-            return apology("must provide title", 400)
+            return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="must provide title"))
 
         if not start_time or not end_time:
             # HERE
-            return apology("must provide start and end time", 400)
+            return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="must provide start and end time"))
 
         try:
             start_time = datetime.fromisoformat(start_time)
@@ -284,7 +297,7 @@ def action():
 
         if start_time >= end_time:
             # HERE
-            return apology("Start time must be before end time", 400)
+            return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Start time must be before end time"))
 
         search_existing_tasks = db.execute(
             "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
@@ -299,7 +312,10 @@ def action():
 
         if search_existing_tasks:
             # HERE
-            return apology("Task conflicts with existing task", 400)
+            return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Task conflicts with existing task"))
+
+        start_time = start_time.strftime("%Y-%m-%d %H:%M")
+        end_time = end_time.strftime("%Y-%m-%d %H:%M")
 
         db.execute(
             "UPDATE registered_tasks SET title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ?",

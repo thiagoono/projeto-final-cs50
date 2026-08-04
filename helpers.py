@@ -1,5 +1,3 @@
-import requests
-
 from pathlib import Path
 
 from flask import redirect, render_template, session
