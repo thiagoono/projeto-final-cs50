@@ -11,56 +11,50 @@
                     <div>
                         <p class="text-uppercase text-muted fw-semibold mb-2">Planning</p>
                         <h2 class="mb-2">Recurring tasks</h2>
-                        <p class="text-muted mb-0">Organize habits, weekly routines, and repeating work without recreating the same task every time.</p>
+                        <p class="text-muted mb-0">These are the recurring tasks currently active for your account.</p>
                     </div>
                     <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create a task</a>
                 </div>
 
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100 bg-light">
-                            <h6 class="mb-2">Daily routines</h6>
-                            <p class="text-muted mb-0">Use recurring tasks for checklists that happen every day, like exercise, study blocks, or medication reminders.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100 bg-light">
-                            <h6 class="mb-2">Weekly planning</h6>
-                            <p class="text-muted mb-0">Set up tasks for classes, meetings, or reviews that repeat on specific weekdays.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="border rounded-3 p-3 h-100 bg-light">
-                            <h6 class="mb-2">Long-term habits</h6>
-                            <p class="text-muted mb-0">Track repeating goals over time so your schedule stays consistent without extra manual work.</p>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="row g-4 align-items-start">
-                    <div class="col-lg-7">
+                    <div class="col-lg-8">
+                        {% if error %}
+                            <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endif %}
+
                         <div class="card border-0 bg-body-tertiary h-100">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3">How recurring tasks will work</h5>
-                                <div class="list-group list-group-flush">
-                                    <div class="list-group-item bg-transparent px-0">
-                                        <strong>1. Create a base task</strong>
-                                        <div class="text-muted">Define the title, description, and the time slot you want to repeat.</div>
+                            <div class="card-body" style="overflow: auto; max-height: 500px;">
+                                <h5 class="card-title mb-3">Active recurring tasks</h5>
+
+                                {% for task in recurring_tasks %}
+                                    <div class="border rounded-3 p-3 mb-3 bg-white">
+                                        <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                                            <div>
+                                                <h6 class="mb-1">{{ task.title }}</h6>
+                                                <p class="text-muted mb-0">{{ task.description or 'No description provided.' }}</p>
+                                            </div>
+                                            <span class="badge bg-primary-subtle text-primary-emphasis text-uppercase">{{ task.recurrency }}</span>
+                                        </div>
+
+                                        <div class="d-flex flex-wrap gap-2 mb-2">
+                                            <span class="badge text-bg-light border">{{ task.start_time }} - {{ task.end_time }}</span>
+                                            {% for day in task.days %}
+                                                <span class="badge text-bg-light border">{{ day }}</span>
+                                            {% endfor %}
+                                        </div>
                                     </div>
-                                    <div class="list-group-item bg-transparent px-0">
-                                        <strong>2. Choose a repeat pattern</strong>
-                                        <div class="text-muted">Pick daily, weekly, or custom intervals when this feature is connected to the backend.</div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <h5 class="mb-2">No active recurring tasks yet</h5>
+                                        <p class="text-muted mb-4">Create a recurring task to have it appear here.</p>
+                                        <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create recurring task</a>
                                     </div>
-                                    <div class="list-group-item bg-transparent px-0">
-                                        <strong>3. Review on your calendar</strong>
-                                        <div class="text-muted">Recurring items can then be displayed alongside your regular tasks and timeline.</div>
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-5">
+                    <div class="col-lg-4">
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-body">
                                 <h5 class="card-title mb-3">Suggested use cases</h5>

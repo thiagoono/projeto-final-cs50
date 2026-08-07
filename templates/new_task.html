@@ -64,31 +64,31 @@
                         <div class="mb-3" id="repeat-days-container">
                             <div class="d-flex flex-wrap gap-2" id="days-of-the-week">
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_monday" name="repeat_days" value="monday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_monday" name="repeat_days_week" value="monday">
                                     <label class="form-check-label" for="repeat_monday">Mon</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_tuesday" name="repeat_days" value="tuesday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_tuesday" name="repeat_days_week" value="tuesday">
                                     <label class="form-check-label" for="repeat_tuesday">Tue</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_wednesday" name="repeat_days" value="wednesday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_wednesday" name="repeat_days_week" value="wednesday">
                                     <label class="form-check-label" for="repeat_wednesday">Wed</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_thursday" name="repeat_days" value="thursday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_thursday" name="repeat_days_week" value="thursday">
                                     <label class="form-check-label" for="repeat_thursday">Thu</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_friday" name="repeat_days" value="friday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_friday" name="repeat_days_week" value="friday">
                                     <label class="form-check-label" for="repeat_friday">Fri</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_saturday" name="repeat_days" value="saturday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_saturday" name="repeat_days_week" value="saturday">
                                     <label class="form-check-label" for="repeat_saturday">Sat</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="checkbox" id="repeat_sunday" name="repeat_days" value="sunday">
+                                    <input class="form-check-input" type="checkbox" id="repeat_sunday" name="repeat_days_week" value="sunday">
                                     <label class="form-check-label" for="repeat_sunday">Sun</label>
                                 </div>
                             </div>
@@ -96,7 +96,7 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <div class="form-check form-check-inline m-0" id="days-of-the-month" style="display: none;">
                                     <label for="repeat_days" class="form-label">Day of the month</label>
-                                    <select class="form-select form-select-sm" id="repeat_day_{{ day }}" name="repeat_days">
+                                    <select class="form-select form-select-sm" id="repeat_day_{{ day }}" name="repeat_days_month">
                                         {% for day in range(1, 32) %}
                                             <option value="{{ day }}">{{ day }}</option>
                                         {% endfor %}

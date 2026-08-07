@@ -247,12 +247,74 @@ def timeline():
 
     return render_template("timeline.html")
 
+@app.route("/recurring-tasks", methods=["GET", "POST"])
 @app.route("/recurring_tasks", methods=["GET", "POST"])
 @login_required
 def recurring_tasks():
-    """Show the recurring tasks page"""
+    if request.method == "POST":
+        title = request.form.get("title")
+        description = request.form.get("description")
+        start_time = request.form.get("start_time")
+        end_time = request.form.get("end_time")
+        recurrence_type = request.form.get("repeat_interval")
 
-    return render_template("recurring_tasks.html")
+        if recurrence_type == "weekly":
+            repeat_days = request.form.getlist("repeat_days_week")
+        elif recurrence_type == "monthly":
+            repeat_days = request.form.getlist("repeat_days_month")
+        elif recurrence_type == "daily":
+            repeat_days = []
+        else:
+            return redirect(url_for("recurring_tasks", error="Invalid recurrence type"))
+
+        if not title:
+            return redirect(url_for("recurring_tasks", error="must provide title"))
+
+        if not start_time or not end_time:
+            return redirect(url_for("recurring_tasks", error="must provide start and end time"))
+
+        time_pattern = r"^([0-1][0-9]|[2][0-3]):[0-5][0-9]$"
+
+        if not re.match(time_pattern, start_time):
+            return redirect(url_for("recurring_tasks", error="Invalid start time format"))
+
+        if not re.match(time_pattern, end_time):
+            return redirect(url_for("recurring_tasks", error="Invalid end time format"))
+
+        # TODO: Validate that start_time is before end_time
+
+        if recurrence_type not in ["daily", "weekly", "monthly"]:
+            return redirect(url_for("recurring_tasks", error="Invalid recurrence type"))
+
+        if recurrence_type == "weekly" and not repeat_days:
+            return redirect(url_for("recurring_tasks", error="Must select at least one day for weekly recurrence"))
+
+        if recurrence_type == "monthly" and (not repeat_days or not all(day.isdigit() and 1 <= int(day) <= 31 for day in repeat_days)):
+            return redirect(url_for("recurring_tasks", error="Must select valid days for monthly recurrence"))
+
+        # Insert the recurring task into the database
+        db.execute(
+            "INSERT INTO recurrent_tasks (user_id, title, description, start_time, end_time, recurrency, days) VALUES(?, ?, ?, ?, ?, ?, ?)",
+            session["user_id"],
+            title,
+            description,
+            start_time,
+            end_time,
+            recurrence_type,
+            " ".join(repeat_days)
+        )
+
+        return redirect(url_for("recurring_tasks"))
+
+    recurring_tasks_rows = db.execute(
+        "SELECT title, description, start_time, end_time, recurrency, days FROM recurrent_tasks WHERE user_id = ? ORDER BY start_time ASC"  ,
+        session["user_id"],
+    )
+
+    for task in recurring_tasks_rows:
+        task["days"] = [day.strip().title() for day in task["days"].split(" ") if day.strip()]
+
+    return render_template("recurring_tasks.html", recurring_tasks=recurring_tasks_rows, error=request.args.get("error"))
 
 @app.route("/profile")
 @login_required
@@ -271,7 +333,6 @@ def action():
 
     action = request.form.get("action")
     redirect_endpoint = "index" if path == "/" else ((path or "").lstrip("/") or "index")
-    redirect_target = url_for(redirect_endpoint, date=date, task=task_id)
 
     if action == "delete":
         db.execute("DELETE FROM registered_tasks WHERE id = ?", task_id)
