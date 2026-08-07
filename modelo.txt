@@ -17,10 +17,8 @@ Além disso também será possível mudar o país (influenciará por conta dos f
 
 Terá uma aba para criar tarefas que se repetirão. Neste caso, deverá ser feito um formulário mesmo, ao invés de utilizar a inteligência artificial, contendo nome, data, duração, a cada quanto tempo se repetirá e se deverá ser excluídos nos feriados (mostrar todos e permitir que o usuário escolha de quais feriados a tarefa será excluída)
 
-Além disso, haverá uma página onde será possível ver todas as tarefas criadas em uma linha do tempo e editá-las, além disso, haverá um aviso caso o sistema verifique que há algum dia com muitas tarefas (mostrar tbm na sidebar e permitir que o usuário marque o aviso como lido)
-
 Database:
 users: ID, username, hash, country DONE (Talvez adicionar email, com TFA)
-registered_tasks: ID, user_id, title, description, time
+registered_tasks: ID, user_id, title, description, time DONE
 recurrent_tasks: ID, user_id, title, description, recurrency, exceptions
 recurrent_tasks-deleted: recurrent_task_id, user_id, day_id

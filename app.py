@@ -247,7 +247,7 @@ def timeline():
 
     return render_template("timeline.html")
 
-@app.route("/recurring-tasks")
+@app.route("/recurring_tasks", methods=["GET", "POST"])
 @login_required
 def recurring_tasks():
     """Show the recurring tasks page"""

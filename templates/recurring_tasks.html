@@ -3,10 +3,92 @@
 {% block title %}Recurring tasks{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h2 class="mb-4">Recurring tasks</h2>
-        <p class="text-muted">You will be able to create and manage recurring tasks here.</p>
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <p class="text-uppercase text-muted fw-semibold mb-2">Planning</p>
+                        <h2 class="mb-2">Recurring tasks</h2>
+                        <p class="text-muted mb-0">Organize habits, weekly routines, and repeating work without recreating the same task every time.</p>
+                    </div>
+                    <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create a task</a>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100 bg-light">
+                            <h6 class="mb-2">Daily routines</h6>
+                            <p class="text-muted mb-0">Use recurring tasks for checklists that happen every day, like exercise, study blocks, or medication reminders.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100 bg-light">
+                            <h6 class="mb-2">Weekly planning</h6>
+                            <p class="text-muted mb-0">Set up tasks for classes, meetings, or reviews that repeat on specific weekdays.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 h-100 bg-light">
+                            <h6 class="mb-2">Long-term habits</h6>
+                            <p class="text-muted mb-0">Track repeating goals over time so your schedule stays consistent without extra manual work.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-7">
+                        <div class="card border-0 bg-body-tertiary h-100">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">How recurring tasks will work</h5>
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item bg-transparent px-0">
+                                        <strong>1. Create a base task</strong>
+                                        <div class="text-muted">Define the title, description, and the time slot you want to repeat.</div>
+                                    </div>
+                                    <div class="list-group-item bg-transparent px-0">
+                                        <strong>2. Choose a repeat pattern</strong>
+                                        <div class="text-muted">Pick daily, weekly, or custom intervals when this feature is connected to the backend.</div>
+                                    </div>
+                                    <div class="list-group-item bg-transparent px-0">
+                                        <strong>3. Review on your calendar</strong>
+                                        <div class="text-muted">Recurring items can then be displayed alongside your regular tasks and timeline.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Suggested use cases</h5>
+                                <ul class="list-unstyled mb-4">
+                                    <li class="mb-3">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis me-2">Daily</span>
+                                        Morning planning and evening review
+                                    </li>
+                                    <li class="mb-3">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis me-2">Weekly</span>
+                                        Study sessions and class preparation
+                                    </li>
+                                    <li class="mb-3">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis me-2">Monthly</span>
+                                        Reports, bills, and maintenance tasks
+                                    </li>
+                                </ul>
+
+                                <div class="d-flex flex-column gap-2">
+                                    <a href="{{ url_for('timeline') }}" class="btn btn-outline-secondary">See timeline</a>
+                                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to home</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
