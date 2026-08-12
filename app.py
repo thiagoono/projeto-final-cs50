@@ -396,7 +396,7 @@ def action():
             return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Start time must be before end time"))
 
         search_existing_tasks = db.execute(
-            "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
+            "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND id != ?",
             session["user_id"],
             start_time,
             start_time,
@@ -404,6 +404,7 @@ def action():
             end_time,
             start_time,
             end_time,
+            task_id
         )
 
         if search_existing_tasks:
