@@ -8,6 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import apology, load_countries, login_required
 
 import re
+import json
 
 app = Flask(__name__)
 
@@ -132,12 +133,44 @@ def index():
 
     selected_date = selected_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    tasks = db.execute(
+    registered_tasks = db.execute(
         "SELECT id, title, description, start_time, end_time FROM registered_tasks WHERE user_id = ? AND start_time >= ? AND end_time <= ? ORDER BY start_time ASC",
         session["user_id"],
         selected_date,
         selected_date + timedelta(days=1),
     )
+
+    recurrent_tasks = db.execute(
+        "SELECT id, title, description, start_time, end_time, recurrency, days FROM recurrent_tasks WHERE user_id = ? AND " \
+        "(recurrency = 'daily' OR (recurrency = 'weekly' AND days LIKE ?) OR (recurrency = 'monthly' AND days LIKE ?)) ORDER BY start_time ASC",
+        session["user_id"],
+        f"%{selected_date.strftime('%A')}%",
+        f"%{selected_date.day}%"
+    )
+
+    tasks = []
+
+    for task in registered_tasks:
+        tasks.append({
+            "id": task["id"],
+            "title": task["title"],
+            "description": task["description"],
+            "start_time": task["start_time"],
+            "end_time": task["end_time"],
+            "recurrency": None,
+            "days": None
+        })
+
+    for task in recurrent_tasks:
+        tasks.append({
+            "id": task["id"],
+            "title": task["title"],
+            "description": task["description"],
+            "start_time": selected_date.strftime("%Y-%m-%d") + " " + task["start_time"],
+            "end_time": selected_date.strftime("%Y-%m-%d") + " " + task["end_time"],
+            "recurrency": task["recurrency"],
+            "days": task["days"]
+        })
 
     for task in tasks:
         task["start_time"] = datetime.strptime(task["start_time"], "%Y-%m-%d %H:%M")
@@ -145,6 +178,8 @@ def index():
 
         task["end_time"] = datetime.strptime(task["end_time"], "%Y-%m-%d %H:%M")
         task["end_time"] = task["end_time"].strftime("%H:%M")
+
+    tasks.sort(key=lambda x: x["start_time"])
 
     selected_date = selected_date.strftime("%Y-%m-%d")
 
@@ -307,7 +342,7 @@ def recurring_tasks():
         return redirect(url_for("recurring_tasks"))
 
     recurring_tasks_rows = db.execute(
-        "SELECT title, description, start_time, end_time, recurrency, days FROM recurrent_tasks WHERE user_id = ? ORDER BY start_time ASC"  ,
+        "SELECT id, title, description, start_time, end_time, recurrency, days FROM recurrent_tasks WHERE user_id = ? ORDER BY start_time ASC"  ,
         session["user_id"],
     )
 

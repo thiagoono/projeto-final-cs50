@@ -13,7 +13,7 @@
                         <h2 class="mb-2">Recurring tasks</h2>
                         <p class="text-muted mb-0">These are the recurring tasks currently active for your account.</p>
                     </div>
-                    <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create a task</a>
+                    <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create a recurring task</a>
                 </div>
 
                 <div class="row g-4 align-items-start">
@@ -25,9 +25,10 @@
                         <div class="card border-0 bg-body-tertiary h-100">
                             <div class="card-body" style="overflow: auto; max-height: 500px;">
                                 <h5 class="card-title mb-3">Active recurring tasks</h5>
+                                <div id="selected-task"></div>
 
                                 {% for task in recurring_tasks %}
-                                    <div class="border rounded-3 p-3 mb-3 bg-white">
+                                    <div class="border rounded-3 p-3 mb-3 bg-white recurring-task" data-task-index="{{ loop.index0 }}" data-task-id="{{ task.id }}">
                                         <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
                                             <div>
                                                 <h6 class="mb-1">{{ task.title }}</h6>
@@ -47,7 +48,7 @@
                                     <div class="text-center py-5">
                                         <h5 class="mb-2">No active recurring tasks yet</h5>
                                         <p class="text-muted mb-4">Create a recurring task to have it appear here.</p>
-                                        <a href="{{ url_for('new_task') }}" class="btn btn-primary">Create recurring task</a>
+                                        <a href="{{ url_for('new_task', recurring=True) }}" class="btn btn-primary">Create recurring task</a>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -85,4 +86,94 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const recurringTasks = {{ recurring_tasks | tojson }};
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            const selectedTaskContainer = document.getElementById("selected-task");
+            const selectedTaskEmptyState = document.getElementById("selected-task-empty");
+            let activeTaskElement = null;
+
+            const clearSelection = () => {
+                selectedTaskContainer.innerHTML = `
+                    <div class="text-center py-5 text-muted" id="selected-task-empty">
+                        Select a recurring task to see details and actions.
+                    </div>
+                `;
+
+                activeTaskElement?.classList.remove("border-primary", "shadow-sm");
+                activeTaskElement = null;
+            };
+
+            const renderTaskCard = taskInfo => {
+                selectedTaskContainer.innerHTML = `
+                    <div class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" style="z-index: 1050;"></div>
+                    <div class="card shadow-lg border-0 position-fixed top-50 start-50 translate-middle" style="width: min(92vw, 460px); z-index: 1060;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <p class="text-uppercase text-muted fw-semibold mb-1">Recurring task</p>
+                                    <h4 class="mb-0">${taskInfo.title}</h4>
+                                </div>
+                                <button type="button" class="btn-close" aria-label="Close" id="close-selected-task"></button>
+                            </div>
+
+                            <p class="text-muted mb-3">${taskInfo.description || "No description provided."}</p>
+
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-primary-subtle text-primary-emphasis text-uppercase">${taskInfo.recurrency}</span>
+                                <span class="badge text-bg-light border">${taskInfo.start_time} - ${taskInfo.end_time}</span>
+                                ${(taskInfo.days || []).map(day => `<span class="badge text-bg-light border">${day}</span>`).join("")}
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+                                <span class="text-muted small">Use the actions below to dismiss or remove the task from the list.</span>
+                                <form action="/action" method="post" class="d-flex gap-2">
+                                    <input type="hidden" name="path" value="{{ path }}">
+                                    <input type="hidden" name="task_id" value="${taskInfo.id}">
+                                    <input type="hidden" name="date" value="{{ selected_date }}">
+                                    <button type="submit" name="action" value="edit" class="btn btn-outline-secondary btn-sm" id="edit-selected-task">Edit</button>
+                                    <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm" id="delete-selected-task">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById("close-selected-task")?.addEventListener("click", clearSelection);
+
+                document.getElementById("remove-selected-task")?.addEventListener("click", clearSelection);
+            };
+
+            document.querySelectorAll(".recurring-task").forEach(recurringTask => {
+                recurringTask.addEventListener("click", () => {
+                    const taskId = recurringTask.dataset.taskId;
+                    const taskInfo = findTaskById(taskId);
+
+                    activeTaskElement?.classList.remove("border-primary", "shadow-sm");
+                    recurringTask.classList.add("border-primary", "shadow-sm");
+                    activeTaskElement = recurringTask;
+
+                    renderTaskCard(taskInfo);
+                });
+            });
+
+            if (selectedTaskEmptyState) {
+                selectedTaskEmptyState.classList.add("opacity-75");
+            }
+        });
+
+        function findTaskById(taskId) {
+            let selectedTask;
+            recurringTasks.forEach(task => {
+                if (task.id == taskId) {
+                    selectedTask = task;
+                }
+            });
+            return selectedTask;
+        }
+    </script>
 {% endblock %}
