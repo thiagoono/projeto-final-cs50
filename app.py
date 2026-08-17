@@ -6,7 +6,6 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, load_countries, login_required
-
 import re
 import json
 
@@ -181,26 +180,51 @@ def index():
 
     tasks.sort(key=lambda x: x["start_time"])
 
-    selected_date = selected_date.strftime("%Y-%m-%d")
-
     selected_task_id = request.args.get("task")
     selected_task = None
 
+    recurrent = False
+
     if selected_task_id:
-        task_rows = db.execute(
-            "SELECT id, title, description, start_time, end_time FROM registered_tasks WHERE id = ?",
-            selected_task_id
-        )
+        recurrent = request.args.get("recurrent")
 
-        if task_rows:
-            selected_task = task_rows[0]
+        if recurrent == "False":
+            task_rows = db.execute(
+                "SELECT id, title, description, start_time, end_time FROM registered_tasks WHERE id = ? AND user_id = ?",
+                selected_task_id,
+                session["user_id"]
+            )
+            recurrent = False
+        else:
+            task_rows = db.execute(
+                "SELECT id, title, description, start_time, end_time, recurrency, days FROM recurrent_tasks WHERE id = ? AND user_id = ?",
+                selected_task_id,
+                session["user_id"]
+            )
+            recurrent = True
+
+        if not task_rows:
+            return apology("Task not found", 404)
+
+        selected_task = task_rows[0]
+
+        if recurrent:
+            selected_task["start_time"] = datetime.strptime(selected_task["start_time"], "%H:%M")
+            selected_task["start_time"] = selected_task["start_time"].replace(year=selected_date.year, month=selected_date.month, day=selected_date.day)
+
+            selected_task["end_time"] = datetime.strptime(selected_task["end_time"], "%H:%M")
+            selected_task["end_time"] = selected_task["end_time"].replace(year=selected_date.year, month=selected_date.month, day=selected_date.day)
+        else:
             selected_task["start_time"] = datetime.strptime(selected_task["start_time"], "%Y-%m-%d %H:%M")
-            selected_task["start_time_iso"] = selected_task["start_time"].isoformat(timespec='minutes')
-            selected_task["start_time"] = selected_task["start_time"].strftime("%d/%m/%Y %H:%M")
-
             selected_task["end_time"] = datetime.strptime(selected_task["end_time"], "%Y-%m-%d %H:%M")
-            selected_task["end_time_iso"] = selected_task["end_time"].isoformat(timespec='minutes')
-            selected_task["end_time"] = selected_task["end_time"].strftime("%d/%m/%Y %H:%M")
+
+        selected_task["start_time_iso"] = selected_task["start_time"].isoformat(timespec='minutes')
+        selected_task["start_time"] = selected_task["start_time"].strftime("%d/%m/%Y %H:%M")
+
+        selected_task["end_time_iso"] = selected_task["end_time"].isoformat(timespec='minutes')
+        selected_task["end_time"] = selected_task["end_time"].strftime("%d/%m/%Y %H:%M")
+
+    selected_date = selected_date.strftime("%Y-%m-%d")
 
     return render_template(
         "index.html",
@@ -209,6 +233,7 @@ def index():
         selected_task=selected_task,
         path=request.path,
         error=request.args.get("error"),
+        recurrent=recurrent,
     )
 
 @app.route("/new-task", methods=["GET", "POST"])
@@ -223,11 +248,9 @@ def new_task():
         end_time = request.form.get("end_time")
 
         if not title:
-            # HERE
             return redirect(url_for("new_task", error="must provide title"))
 
         if not start_time or not end_time:
-            # HERE
             return redirect(url_for("new_task", error="must provide start and end time"))
 
         try:
@@ -241,10 +264,9 @@ def new_task():
             return apology("Invalid time format", 400)
 
         if start_time >= end_time:
-            # HERE
             return redirect(url_for("new_task", error="Start time must be before end time"))
 
-        search_existing_tasks = db.execute(
+        search_existing_registered_tasks = db.execute(
             "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
             session["user_id"],
             start_time,
@@ -254,9 +276,21 @@ def new_task():
             start_time,
             end_time,
         )
-
-        if search_existing_tasks:
-            # HERE
+    
+        search_existing_recurrent_tasks = db.execute(
+            "SELECT * FROM recurrent_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND (recurrency = 'daily' OR (recurrency = 'weekly' AND days LIKE ?) OR (recurrency = 'monthly' AND days LIKE ?))",
+            session["user_id"],
+            start_time.strftime("%H:%M"),
+            start_time.strftime("%H:%M"),
+            end_time.strftime("%H:%M"),
+            end_time.strftime("%H:%M"),
+            start_time.strftime("%H:%M"),
+            end_time.strftime("%H:%M"),
+            f"%{start_time.strftime('%A')}%",
+            f"%{start_time.strftime('%d')}%",
+        )
+    
+        if search_existing_registered_tasks or search_existing_recurrent_tasks:
             return redirect(url_for("new_task", error="Task conflicts with existing task"))
 
         start_time = start_time.strftime("%Y-%m-%d %H:%M")
@@ -282,21 +316,29 @@ def timeline():
 
     return render_template("timeline.html")
 
-@app.route("/recurring-tasks", methods=["GET", "POST"])
 @app.route("/recurring_tasks", methods=["GET", "POST"])
 @login_required
 def recurring_tasks():
     if request.method == "POST":
         title = request.form.get("title")
         description = request.form.get("description")
+
         start_time = request.form.get("start_time")
         end_time = request.form.get("end_time")
+
         recurrence_type = request.form.get("repeat_interval")
 
         if recurrence_type == "weekly":
             repeat_days = request.form.getlist("repeat_days_week")
+            for day in repeat_days:
+                if day not in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]:
+                    return apology("Not a valid day of the week")
+                
         elif recurrence_type == "monthly":
             repeat_days = request.form.getlist("repeat_days_month")
+            if repeat_days[0] not in [i for i in range(1, 32)]:
+                return apology("Not a valid day of the month")
+
         elif recurrence_type == "daily":
             repeat_days = []
         else:
@@ -326,6 +368,46 @@ def recurring_tasks():
 
         if recurrence_type == "monthly" and (not repeat_days or not all(day.isdigit() and 1 <= int(day) <= 31 for day in repeat_days)):
             return redirect(url_for("recurring_tasks", error="Must select valid days for monthly recurrence"))
+
+        # CHECK FOR CONFLICTS WITH OTHER recurrent TASKS
+        command_for_recurrent = "SELECT * FROM recurrent_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND (recurrency = 'daily'"
+
+        if recurrence_type == "daily":
+            command_for_recurrent += ")"
+        elif recurrence_type == "weekly":
+            command_for_recurrent += " OR (recurrency = 'weekly' AND (" + " OR ".join(f"days LIKE '%{day}%'" for day in repeat_days) + ")) OR (recurrency = 'monthly'))"
+        else:
+            command_for_recurrent += f" OR (recurrency = 'monthly' AND days = [{repeat_days[0]}]) OR (recurrency = 'weekly'))"
+
+        existing_recurrent_tasks = db.execute(
+            command_for_recurrent,
+            session["user_id"],
+            start_time,
+            start_time,
+            end_time,
+            end_time,
+            start_time,
+            end_time,
+        )
+
+        if existing_recurrent_tasks:
+            return redirect("/new_task", error="There is a task that conflicts with this task")
+
+        # CHECK FOR CONFLICTS WITH registered TASKS
+        existing_registered_tasks = db.execute(
+            "SELECT start_time, end_time FROM registered_tasks WHERE user_id = ?",
+            session["user_id"]
+        )
+
+        for task in existing_registered_tasks:
+            start_time_object = datetime.strptime(task["start_time"], "%Y-%m-%d %H:%M")
+            end_time_object = datetime.strptime(task["end_time"], "%Y-%m-%d %H:%M")
+
+            if recurrence_type == "daily" or (recurrence_type == "weekly" and start_time_object.strftime("%A") in repeat_days) or (recurrence_type == "monthly" and str(start_time_object.day) in repeat_days):
+                start_hour_minute = start_time_object.strftime("%H:%M")
+                end_hour_minute = end_time_object.strftime("%H:%M")
+                if (start_hour_minute <= start_time <= end_hour_minute) or (start_hour_minute <= end_time <= end_hour_minute) or (start_time <= start_hour_minute <= end_time):
+                    return apology("There is a task that conflicts with this task")
 
         # Insert the recurring task into the database
         db.execute(
@@ -365,12 +447,14 @@ def action():
     path = request.form.get("path")
     task_id = request.form.get("task_id")
     date = request.form.get("date")
+    table = request.form.get("table")
 
     action = request.form.get("action")
     redirect_endpoint = "index" if path == "/" else ((path or "").lstrip("/") or "index")
 
     if action == "delete":
-        db.execute("DELETE FROM registered_tasks WHERE id = ?", task_id)
+        db.execute("DELETE FROM ? WHERE id = ? AND user_id = ?", table, task_id, session["user_id"])
+        
     elif action == "edit":
         title = request.form.get("title")
         description = request.form.get("description")
@@ -378,11 +462,9 @@ def action():
         end_time = request.form.get("end_time")
 
         if not title:
-            # HERE
             return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="must provide title"))
 
         if not start_time or not end_time:
-            # HERE
             return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="must provide start and end time"))
 
         try:
@@ -392,36 +474,127 @@ def action():
             return apology("Invalid time format", 400)
 
         if start_time >= end_time:
-            # HERE
             return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Start time must be before end time"))
 
-        search_existing_tasks = db.execute(
-            "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND id != ?",
-            session["user_id"],
-            start_time,
-            start_time,
-            end_time,
-            end_time,
-            start_time,
-            end_time,
-            task_id
-        )
+        if table == "registered_tasks":
+            search_existing_registered_tasks = db.execute(
+                "SELECT * FROM registered_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND id != ?",
+                session["user_id"],
+                start_time,
+                start_time,
+                end_time,
+                end_time,
+                start_time,
+                end_time,
+                task_id
+            )
+        
+            search_existing_recurrent_tasks = db.execute(
+                "SELECT * FROM recurrent_tasks WHERE user_id = ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND (recurrency = 'daily' OR (recurrency = 'weekly' AND days LIKE ?) OR (recurrency = 'monthly' AND days LIKE ?))",
+                session["user_id"],
+                start_time.strftime("%H:%M"),
+                start_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                start_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                f"%{start_time.strftime('%A')}%",
+                f"%{start_time.strftime('%d')}%",
+            )
+        
+            if search_existing_registered_tasks or search_existing_recurrent_tasks:
+                return redirect(url_for("new_task", error="Task conflicts with existing task"))
+            start_time = start_time.strftime("%Y-%m-%d %H:%M")
+            end_time = end_time.strftime("%Y-%m-%d %H:%M")
 
-        if search_existing_tasks:
-            # HERE
-            return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Task conflicts with existing task"))
+            db.execute(
+                "UPDATE registered_tasks SET title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ? AND user_id = ?",
+                title,
+                description,
+                start_time,
+                end_time,
+                task_id,
+                session["user_id"]
+            )
 
-        start_time = start_time.strftime("%Y-%m-%d %H:%M")
-        end_time = end_time.strftime("%Y-%m-%d %H:%M")
+        elif table == "recurrent_tasks":
+            recurrence_type = request.form.get("recurrency")
+            repeat_days = db.execute("SELECT days FROM recurrent_tasks WHERE id = ? AND user_id = ?", task_id, session["user_id"])[0]["days"].split(" ")
 
-        db.execute(
-            "UPDATE registered_tasks SET title = ?, description = ?, start_time = ?, end_time = ? WHERE id = ?",
-            title,
-            description,
-            start_time,
-            end_time,
-            task_id,
-        )
+            if recurrence_type == "weekly":
+                repeat_days = request.form.getlist("repeat_days_week")
+            elif recurrence_type == "monthly":
+                repeat_days = request.form.getlist("repeat_days_month")
+            elif recurrence_type == "daily":
+                repeat_days = []
+            else:
+                return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Invalid recurrence type"))
+
+            if recurrence_type not in ["daily", "weekly", "monthly"]:
+                return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Invalid recurrence type"))
+
+            if recurrence_type == "weekly" and not repeat_days:
+                return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Must select at least one day for weekly recurrence"))
+
+            if recurrence_type == "monthly" and (not repeat_days or not all(day.isdigit() and 1 <= int(day) <= 31 for day in repeat_days)):
+                return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Must select valid days for monthly recurrence"))
+
+            # CHECK FOR CONFLICTS WITH OTHER recurrent TASKS
+            command_for_recurrent = "SELECT * FROM recurrent_tasks WHERE user_id = ? AND id != ? AND ((start_time <= ? AND end_time >= ?) OR (start_time <= ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?)) AND (recurrency = 'daily'"
+
+            if recurrence_type == "daily":
+                command_for_recurrent += ")"
+            elif recurrence_type == "weekly":
+                command_for_recurrent += " OR (recurrency = 'weekly' AND (" + " OR ".join(f"days LIKE %'{day}'%" for day in repeat_days) + ")) OR (recurrency = 'monthly'))"
+            else:
+                command_for_recurrent += " OR (recurrency = 'monthly' AND days = ?) OR (recurrency = 'weekly'))"
+
+            existing_recurrent_tasks = db.execute(
+                command_for_recurrent,
+                session["user_id"],
+                task_id,
+                start_time.strftime("%H:%M"),
+                start_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                start_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                " ".join(repeat_days)
+            )
+
+            if existing_recurrent_tasks:
+                return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Task conflicts with existing recurring task"))
+
+            # CHECK FOR CONFLICTS WITH registered TASKS
+            existing_registered_tasks = db.execute(
+                "SELECT start_time, end_time FROM registered_tasks WHERE user_id = ? AND id != ?",
+                session["user_id"],
+                task_id
+            )
+
+            for task in existing_registered_tasks:
+                start_time_object = datetime.strptime(task["start_time"], "%Y-%m-%d %H:%M")
+                end_time_object = datetime.strptime(task["end_time"], "%Y-%m-%d %H:%M")
+
+                if recurrence_type == "daily" or (recurrence_type == "weekly" and start_time_object.strftime("%A") in repeat_days) or (recurrence_type == "monthly" and str(start_time_object.day) in repeat_days):
+                    if (start_time_object <= start_time <= end_time_object) or (start_time_object <= end_time <= end_time_object) or (start_time <= start_time_object <= end_time):
+                        return redirect(url_for(redirect_endpoint, date=date, task=task_id, error="Task conflicts with existing task"))
+
+            db.execute(
+                "UPDATE recurrent_tasks SET title = ?, description = ?, start_time = ?, end_time = ?, recurrency = ?, days = ? WHERE id = ? AND user_id = ?",
+                title,
+                description,
+                start_time.strftime("%H:%M"),
+                end_time.strftime("%H:%M"),
+                recurrence_type,
+                " ".join(repeat_days),
+                task_id,
+                session["user_id"]
+            )
+
+        else:
+            return apology("Invalid task type", 400)
+
     else:
         return apology("Invalid action", 400)
 

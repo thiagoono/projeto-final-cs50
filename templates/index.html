@@ -36,6 +36,11 @@
                 <form action="/" method="GET" class="border-start border-3 ps-3 mb-3">
                     <input type="hidden" name="date" value="{{ selected_date }}">
                     <input type="hidden" name="task" value="{{ task.id }}">
+                    {% if task["recurrency"] %}
+                        <input type="hidden" name="recurrent" value="True">
+                    {% else %}
+                        <input type="hidden" name="recurrent" value="False">
+                    {% endif %}
                     <button type="submit" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer; text-align: left; width: 100%;">
                         <h6 class="mb-1">{{ task.start_time }} - {{ task.end_time }}</h6>
                         <p class="mb-0">{{ task.title }}</p>
@@ -69,6 +74,10 @@
                         <input type="hidden" name="path" value="{{ path }}">
                         <input type="hidden" name="task_id" value="{{ selected_task.id }}">
                         <input type="hidden" name="date" value="{{ selected_date }}">
+                        <input type="hidden" name="table" value="{% if recurrent %}recurrent_tasks{% else %}registered_tasks{% endif %}">
+                        {% if recurrent %}
+                            <input type="hidden" name="recurrency" value="{{ selected_task.recurrency }}">
+                        {% endif %}
                         <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm">Delete</button>
                         <button type="button" name="action" value="edit" class="btn btn-outline-primary btn-sm" id="edit-button">Edit</button>
                     </div>
@@ -102,7 +111,7 @@
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
                                     <div class="d-flex flex-column gap-2" style="max-width: 240px;">
                                         <label class="form-label mb-0">Start time</label>
-                                        <input type="datetime-local" step="60" class="form-control form-control-sm" id="edit-start-time" name="start_time" value="{{ selected_task.end_time_iso }}">
+                                        <input type="datetime-local" step="60" class="form-control form-control-sm" id="edit-start-time" name="start_time" value="{{ selected_task.start_time_iso }}">
                                         <label class="form-label mb-0">End time</label>
                                         <input type="datetime-local" step="60" class="form-control form-control-sm" id="edit-end-time" name="end_time" value="{{ selected_task.end_time_iso }}">
                                     </div>
@@ -110,6 +119,10 @@
                                         <input type="hidden" name="path" value="{{ path }}">
                                         <input type="hidden" name="task_id" value="{{ selected_task.id }}">
                                         <input type="hidden" name="date" value="{{ selected_date }}">
+                                        <input type="hidden" name="table" value="{% if recurrent %}recurrent_tasks{% else %}registered_tasks{% endif %}">
+                                        {% if recurrent %}
+                                            <input type="hidden" name="recurrency" value="{{ selected_task.recurrency }}">
+                                        {% endif %}
                                         <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm">Delete</button>
                                         <button type="submit" name="action" value="edit" class="btn btn-outline-primary btn-sm" id="edit-button">Update</button>
                                     </div>
