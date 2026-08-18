@@ -72,9 +72,6 @@
                             <a class="nav-link" href="{{ url_for('new_task') }}">New task</a>
                         </li>
                         <li class="nav-item mb-2">
-                            <a class="nav-link" href="{{ url_for('timeline') }}">Timeline</a>
-                        </li>
-                        <li class="nav-item mb-2">
                             <a class="nav-link" href="{{ url_for('recurring_tasks') }}">Recurring tasks</a>
                         </li>
                         <li class="nav-item mb-2">
@@ -86,7 +83,6 @@
                 <nav class="mobile-nav" aria-label="Mobile navigation">
                     <a href="{{ url_for('index') }}" title="Home">🏠</a>
                     <a href="{{ url_for('new_task') }}" title="New task">➕</a>
-                    <a href="{{ url_for('timeline') }}" title="Timeline">📅</a>
                     <a href="{{ url_for('recurring_tasks') }}" title="Recurring tasks">🔁</a>
                     <a href="{{ url_for('profile') }}" title="Profile">👤</a>
                 </nav>

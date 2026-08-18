@@ -309,13 +309,6 @@ def new_task():
 
     return render_template("new_task.html", error=request.args.get("error"))
 
-@app.route("/timeline")
-@login_required
-def timeline():
-    """Show the timeline page"""
-
-    return render_template("timeline.html")
-
 @app.route("/recurring_tasks", methods=["GET", "POST"])
 @login_required
 def recurring_tasks():
