@@ -22,6 +22,29 @@
                             <div class="alert alert-danger" role="alert">{{ error }}</div>
                         {% endif %}
 
+                        {% if conflict_tasks %}
+                            <div class="card border-danger-subtle bg-danger-subtle mb-3" style="z-index: 1500;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger-emphasis mb-3">Conflicting tasks</h5>
+                                    <p class="mb-3">The selected time overlaps with the following task(s):</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        {% for task in conflict_tasks %}
+                                            <div class="border rounded-3 bg-white p-3">
+                                                <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                                    <strong>{{ task.title }}</strong>
+                                                    <span class="badge text-bg-light border">{{ task.task_type }}</span>
+                                                </div>
+                                                <div class="small text-muted">{{ task.time_range }}</div>
+                                                {% if task.recurrency %}
+                                                    <div class="small text-muted">Recurrence: {{ task.recurrency }}{% if task.days %} ({{ task.days }}){% endif %}</div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
                         <div class="card border-0 bg-body-tertiary h-100">
                             <div class="card-body" style="overflow: auto; max-height: 500px;">
                                 <h5 class="card-title mb-3">Active recurring tasks</h5>
@@ -75,7 +98,6 @@
                                 </ul>
 
                                 <div class="d-flex flex-column gap-2">
-                                    <a href="{{ url_for('timeline') }}" class="btn btn-outline-secondary">See timeline</a>
                                     <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to home</a>
                                 </div>
                             </div>
@@ -98,11 +120,7 @@
             let activeTaskElement = null;
 
             const clearSelection = () => {
-                selectedTaskContainer.innerHTML = `
-                    <div class="text-center py-5 text-muted" id="selected-task-empty">
-                        Select a recurring task to see details and actions.
-                    </div>
-                `;
+                selectedTaskContainer.innerHTML = "";
 
                 activeTaskElement?.classList.remove("border-primary", "shadow-sm");
                 activeTaskElement = null;
@@ -135,7 +153,7 @@
                                     <input type="hidden" name="path" value="{{ path }}">
                                     <input type="hidden" name="task_id" value="${taskInfo.id}">
                                     <input type="hidden" name="date" value="{{ selected_date }}">
-                                    <button type="submit" name="action" value="edit" class="btn btn-outline-secondary btn-sm" id="edit-selected-task">Edit</button>
+                                    <button type="button" value="edit" class="btn btn-outline-secondary btn-sm" id="edit-selected-task">Edit</button>
                                     <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm" id="delete-selected-task">Delete</button>
                                 </form>
                             </div>
@@ -145,7 +163,9 @@
 
                 document.getElementById("close-selected-task")?.addEventListener("click", clearSelection);
 
-                document.getElementById("remove-selected-task")?.addEventListener("click", clearSelection);
+                document.getElementById("edit-selected-task")?.addEventListener("click", () => {
+                    renderEditTaskForm(taskInfo);
+                });
             };
 
             document.querySelectorAll(".recurring-task").forEach(recurringTask => {
@@ -164,6 +184,102 @@
             if (selectedTaskEmptyState) {
                 selectedTaskEmptyState.classList.add("opacity-75");
             }
+
+            function renderEditTaskForm(taskInfo) {
+                selectedTaskContainer.innerHTML = `
+                    <div class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" style="z-index: 1050;"></div>
+                    <div class="card shadow-lg border-0 position-fixed top-50 start-50 translate-middle" style="width: min(92vw, 460px); z-index: 1060;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <p class="text-uppercase text-muted fw-semibold mb-1">Edit recurring task</p>
+                                    <h4 class="mb-0">${taskInfo.title}</h4>
+                                </div>
+                                <button type="button" class="btn-close" aria-label="Close" id="close-selected-task"></button>
+                            </div>
+
+                            <form action="/action" method="post" id="edit-task-form">
+                                <input type="hidden" name="path" value="{{ path }}">
+                                <input type="hidden" name="task_id" value="${taskInfo.id}">
+                                <input type="hidden" name="date" value="{{ selected_date }}">
+                                <input type="hidden" name="table" value="recurrent_tasks">
+
+                                <div class="mb-3">
+                                    <label for="task-title" class="form-label">Title</label>
+                                    <input type="text" class="form-control" id="task-title" name="title" value="${taskInfo.title}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="task-description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="task-description" name="description">${taskInfo.description || ""}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="task-start-time" class="form-label">Start time</label>
+                                    <input type="time" class="form-control" id="task-start-time" name="start_time" value="${taskInfo.start_time}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="task-end-time" class="form-label">End time</label>
+                                    <input type="time" class="form-control" id="task-end-time" name="end_time" value="${taskInfo.end_time}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="task-recurrency" class="form-label">Repeat every</label>
+                                    <select class="form-select" id="task-recurrency" name="recurrency" required>
+                                        <option value="daily" ${taskInfo.recurrency === "daily" ? "selected" : ""}>Day</option>
+                                        <option value="weekly" ${taskInfo.recurrency === "weekly" ? "selected" : ""}>Week</option>
+                                        <option value="monthly" ${taskInfo.recurrency === "monthly" ? "selected" : ""}>Month</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" id="weekly-days-container">
+                                    <label class="form-label d-block">Days of the week</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => `
+                                            <div class="form-check form-check-inline m-0">
+                                                <input class="form-check-input" type="checkbox" id="edit-${day.toLowerCase()}" name="repeat_days_week" value="${day}" ${(taskInfo.recurrency === "weekly" && (taskInfo.days || []).includes(day)) ? "checked" : ""}>
+                                                <label class="form-check-label" for="edit-${day.toLowerCase()}">${day.slice(0, 3)}</label>
+                                            </div>
+                                        `).join("")}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3" id="monthly-days-container">
+                                    <label for="edit-monthly-days" class="form-label">Days of the month</label>
+                                    <select class="form-select" id="edit-monthly-days" name="repeat_days_month" multiple size="5">
+                                        ${Array.from({ length: 31 }, (_, index) => index + 1).map(day => `
+                                            <option value="${day}" ${(taskInfo.recurrency === "monthly" && (taskInfo.days || []).includes(String(day))) ? "selected" : ""}>${day}</option>
+                                        `).join("")}
+                                    </select>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <button type="submit" name="action" value="edit" class="btn btn-primary">Save changes</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="cancel-edit-task">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById("close-selected-task")?.addEventListener("click", clearSelection);
+                document.getElementById("cancel-edit-task")?.addEventListener("click", () => {
+                    renderTaskCard(taskInfo);
+                });
+
+                const recurrenceSelect = document.getElementById("task-recurrency");
+                const weeklyDaysContainer = document.getElementById("weekly-days-container");
+                const monthlyDaysContainer = document.getElementById("monthly-days-container");
+
+                const updateRecurrenceFields = () => {
+                    weeklyDaysContainer.classList.toggle("d-none", recurrenceSelect.value !== "weekly");
+                    monthlyDaysContainer.classList.toggle("d-none", recurrenceSelect.value !== "monthly");
+                };
+
+                recurrenceSelect.addEventListener("change", updateRecurrenceFields);
+                updateRecurrenceFields();
+            }
         });
 
         function findTaskById(taskId) {
@@ -175,5 +291,7 @@
             });
             return selectedTask;
         }
+
+        
     </script>
 {% endblock %}

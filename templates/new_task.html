@@ -11,6 +11,29 @@
                     <div class="alert alert-danger" role="alert">{{ error }}</div>
                 {% endif %}
 
+                {% if conflict_tasks %}
+                    <div class="card border-danger-subtle bg-danger-subtle mb-4" style="z-index: 1500;">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger-emphasis mb-3">Conflicting tasks</h5>
+                            <p class="mb-3">The selected time overlaps with the following task(s):</p>
+                            <div class="d-flex flex-column gap-2">
+                                {% for task in conflict_tasks %}
+                                    <div class="border rounded-3 bg-white p-3">
+                                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                            <strong>{{ task.title }}</strong>
+                                            <span class="badge text-bg-light border">{{ task.task_type }}</span>
+                                        </div>
+                                        <div class="small text-muted">{{ task.time_range }}</div>
+                                        {% if task.recurrency %}
+                                            <div class="small text-muted">Recurrence: {{ task.recurrency }}{% if task.days %} ({{ task.days }}){% endif %}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="mb-1">Create a new task</h2>
