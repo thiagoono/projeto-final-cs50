@@ -42,7 +42,7 @@
                     <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
                 </div>
 
-                <form id="task-form" action="/new-task" method="post">
+                <form id="task-form" action="/new_task" method="post">
                     <div class="mb-3">
                         <label for="task_type" class="form-label">Task type</label>
                         <select class="form-select" id="task_type" name="task_type" required>
@@ -148,7 +148,6 @@
             const updateFormState = () => {
                 const isRecurring = taskType.value === 'recurring';
                 recurringFields.classList.toggle('d-none', !isRecurring);
-                taskForm.action = isRecurring ? '/recurring_tasks' : '/new-task';
 
                 recurringInputs.forEach((input) => {
                     input.required = isRecurring && input.id === 'repeat_until' ? false : input.required;

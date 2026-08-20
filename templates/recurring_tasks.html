@@ -149,8 +149,7 @@
 
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
                                 <span class="text-muted small">Use the actions below to dismiss or remove the task from the list.</span>
-                                <form action="/action" method="post" class="d-flex gap-2">
-                                    <input type="hidden" name="path" value="{{ path }}">
+                                <form action="/recurring_tasks" method="post" class="d-flex gap-2">
                                     <input type="hidden" name="task_id" value="${taskInfo.id}">
                                     <input type="hidden" name="date" value="{{ selected_date }}">
                                     <button type="button" value="edit" class="btn btn-outline-secondary btn-sm" id="edit-selected-task">Edit</button>
@@ -198,7 +197,7 @@
                                 <button type="button" class="btn-close" aria-label="Close" id="close-selected-task"></button>
                             </div>
 
-                            <form action="/action" method="post" id="edit-task-form">
+                            <form action="/recurring_tasks" method="post" id="edit-task-form">
                                 <input type="hidden" name="path" value="{{ path }}">
                                 <input type="hidden" name="task_id" value="${taskInfo.id}">
                                 <input type="hidden" name="date" value="{{ selected_date }}">
