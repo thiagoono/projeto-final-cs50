@@ -101,6 +101,13 @@
                                     </div>
                                 {% endfor %}
                             </div>
+                            <p class="small text-danger-emphasis mt-3 mb-2">You can still save this edit even with overlaps.</p>
+                            <button type="submit" name="action" value="edit" class="btn btn-danger btn-sm">Force edit anyway</button>
+                            <input type="hidden" name="force_conflict" value="1">
+                            <input type="hidden" name="title" value="{{ selected_task.title }}">
+                            <input type="hidden" name="description" value="{{ selected_task.description or '' }}">
+                            <input type="hidden" name="start_time" value="{{ selected_task.start_time_form or selected_task.start_time_iso }}">
+                            <input type="hidden" name="end_time" value="{{ selected_task.end_time_form or selected_task.end_time_iso }}">
                         </div>
                     </div>
                 {% endif %}

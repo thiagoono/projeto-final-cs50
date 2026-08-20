@@ -3,10 +3,81 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm">
+<div class="card shadow-sm mb-4">
     <div class="card-body">
-        <h2 class="mb-4">Profile</h2>
-        <p class="text-muted">Here the user will be able to change their name, password, and country.</p>
+        <h2 class="mb-1">Profile</h2>
+        <p class="text-muted mb-0">Change your username, password, and country.</p>
+    </div>
+</div>
+
+{% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if success %}
+    <div class="alert alert-success" role="alert">{{ success }}</div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Username</h5>
+                <p class="text-muted small">Current: {{ username }}</p>
+                <form action="{{ url_for('profile') }}" method="post">
+                    <input type="hidden" name="action" value="username">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">New username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update username</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Password</h5>
+                <form action="{{ url_for('profile') }}" method="post">
+                    <input type="hidden" name="action" value="password">
+                    <div class="mb-3">
+                        <label for="current_password" class="form-label">Current password</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">New password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmation" class="form-label">Confirm new password</label>
+                        <input type="password" class="form-control" id="confirmation" name="confirmation" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Country</h5>
+                <form action="{{ url_for('profile') }}" method="post">
+                    <input type="hidden" name="action" value="country">
+                    <div class="mb-3">
+                        <label for="country" class="form-label">Country</label>
+                        <select class="form-select" id="country" name="country" required>
+                            {% for country in countries %}
+                                <option value="{{ country }}" {% if country == selected_country %}selected{% endif %}>{{ country }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update country</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -240,6 +240,7 @@ def index():
         task_id = request.form.get("task_id")
         date = request.form.get("date")
         table = request.form.get("table")
+        force_conflict = request.form.get("force_conflict") == "1"
     
         action = request.form.get("action")
         if action == "delete":
@@ -338,7 +339,7 @@ def index():
                     f"%{start_time.strftime('%d')}%",
                 )
             
-                if search_existing_registered_tasks or search_existing_recurrent_tasks:
+                if (search_existing_registered_tasks or search_existing_recurrent_tasks) and not force_conflict:
                     conflicting_tasks = [task for task in search_existing_registered_tasks] + [task for task in search_existing_recurrent_tasks]
                     return render_template(
                         "index.html", 
@@ -351,8 +352,10 @@ def index():
                             "id": task_id, 
                             "title": title, 
                             "description": description, 
-                            "start_time": start_time, 
-                            "end_time": end_time
+                            "start_time": start_time.strftime("%d/%m/%Y %H:%M"),
+                            "end_time": end_time.strftime("%d/%m/%Y %H:%M"),
+                            "start_time_form": start_time.isoformat(timespec="minutes"),
+                            "end_time_form": end_time.isoformat(timespec="minutes")
                         }, 
                     )
 
@@ -510,7 +513,7 @@ def index():
                         if (start_hour_minute <= start_time <= end_hour_minute) or (start_hour_minute <= end_time <= end_hour_minute) or (start_time <= start_hour_minute <= end_time):
                             conflicting_tasks.append(task)
     
-                if conflicting_tasks != []:
+                if conflicting_tasks != [] and not force_conflict:
                     return render_template(
                         "index.html", 
                         conflict_tasks=conflicting_tasks, 
@@ -520,8 +523,11 @@ def index():
                             "title": title,
                             "description": description,
                             "start_time": start_time,
-                            "end_time": end_time
+                            "end_time": end_time,
+                            "start_time_form": start_time,
+                            "end_time_form": end_time
                         }, 
+                        recurrent="True",
                     )
     
                 db.execute(
@@ -554,6 +560,7 @@ def new_task():
         description = request.form.get("description")
         start_time = request.form.get("start_time")
         end_time = request.form.get("end_time")
+        force_conflict = request.form.get("force_conflict") == "1"
 
         task_type = request.form.get("task_type")
         if task_type == "common":
@@ -604,8 +611,18 @@ def new_task():
 
             conflict_tasks += search_existing_registered_tasks + search_existing_recurrent_tasks
         
-            if search_existing_registered_tasks or search_existing_recurrent_tasks:
-                return render_template("new_task.html", conflict_tasks=conflict_tasks)
+            if (search_existing_registered_tasks or search_existing_recurrent_tasks) and not force_conflict:
+                return render_template(
+                    "new_task.html",
+                    conflict_tasks=conflict_tasks,
+                    pending_task={
+                        "task_type": "common",
+                        "title": title,
+                        "description": description,
+                        "start_time": start_time.isoformat(timespec="minutes"),
+                        "end_time": end_time.isoformat(timespec="minutes")
+                    }
+                )
 
             start_time = start_time.strftime("%Y-%m-%d %H:%M")
             end_time = end_time.strftime("%Y-%m-%d %H:%M")
@@ -709,8 +726,20 @@ def new_task():
                     if (start_hour_minute <= start_time <= end_hour_minute) or (start_hour_minute <= end_time <= end_hour_minute) or (start_time <= start_hour_minute <= end_time):
                         conflicting_tasks.append(task)
     
-            if conflicting_tasks:
-                return redirect(url_for("new_task", conflict_tasks=conflicting_tasks))
+            if conflicting_tasks and not force_conflict:
+                return render_template(
+                    "new_task.html",
+                    conflict_tasks=conflicting_tasks,
+                    pending_task={
+                        "task_type": "recurring",
+                        "title": title,
+                        "description": description,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "repeat_interval": recurrence_type,
+                        "repeat_days": repeat_days
+                    }
+                )
     
             # Insert the recurring task into the database
             db.execute(
@@ -750,6 +779,7 @@ def recurring_tasks():
     elif request.method == "POST":
         task_id = request.form.get("task_id")
         action = request.form.get("action")
+        force_conflict = request.form.get("force_conflict") == "1"
 
         if action == "delete":
             
@@ -846,8 +876,21 @@ def recurring_tasks():
                     if (start_hour_minute <= start_time <= end_hour_minute) or (start_hour_minute <= end_time <= end_hour_minute) or (start_time <= start_hour_minute <= end_time):
                         conflicting_tasks.append(task)
 
-            if conflicting_tasks != []:
-                return render_template("recurring_tasks.html", conflict_tasks=conflicting_tasks, recurring_tasks=recurring_tasks_rows)
+            if conflicting_tasks != [] and not force_conflict:
+                return render_template(
+                    "recurring_tasks.html",
+                    conflict_tasks=conflicting_tasks,
+                    recurring_tasks=recurring_tasks_rows,
+                    pending_task={
+                        "task_id": task_id,
+                        "title": title,
+                        "description": description,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "recurrency": recurrence_type,
+                        "repeat_days": repeat_days
+                    }
+                )
 
             db.execute(
                 "UPDATE recurrent_tasks SET title = ?, description = ?, start_time = ?, end_time = ?, recurrency = ?, days = ? WHERE id = ? AND user_id = ?",
@@ -863,9 +906,166 @@ def recurring_tasks():
 
         return redirect("recurring_tasks")
 
-@app.route("/profile")
+@app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
-    """Show the profile page"""
+    """Show and update profile settings."""
+    countries = load_countries()
+    user = db.execute("SELECT username, country, hash FROM users WHERE id = ?", session["user_id"])
 
-    return render_template("profile.html")
+    if not user:
+        return apology("User not found", 404)
+
+    user = user[0]
+
+    selected_country_name = ""
+    for country_name in countries:
+        country_code = countrycode(country_name, origin="country.name.en.regex", destination="iso3c")[0]
+        if country_code == user["country"]:
+            selected_country_name = country_name
+            break
+
+    if request.method == "GET":
+        return render_template(
+            "profile.html",
+            username=user["username"],
+            countries=countries,
+            selected_country=selected_country_name,
+        )
+
+    action = request.form.get("action")
+
+    if action == "username":
+        new_username = request.form.get("username", "").strip()
+
+        if not new_username:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="must provide username",
+            )
+
+        try:
+            db.execute("UPDATE users SET username = ? WHERE id = ?", new_username, session["user_id"])
+        except ValueError:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="Username already exists",
+            )
+
+        return render_template(
+            "profile.html",
+            username=new_username,
+            countries=countries,
+            selected_country=selected_country_name,
+            success="Username updated successfully",
+        )
+
+    if action == "password":
+        current_password = request.form.get("current_password")
+        new_password = request.form.get("password")
+        confirmation = request.form.get("confirmation")
+
+        if not current_password:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="must provide current password",
+            )
+
+        if not check_password_hash(user["hash"], current_password):
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="Current password is incorrect",
+            )
+
+        if not new_password:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="must provide password",
+            )
+
+        if not confirmation:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="must confirm your password",
+            )
+
+        if new_password != confirmation:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="Passwords don't match",
+            )
+
+        db.execute(
+            "UPDATE users SET hash = ? WHERE id = ?",
+            generate_password_hash(new_password),
+            session["user_id"],
+        )
+
+        return render_template(
+            "profile.html",
+            username=user["username"],
+            countries=countries,
+            selected_country=selected_country_name,
+            success="Password updated successfully",
+        )
+
+    if action == "country":
+        country_name = request.form.get("country")
+
+        if not country_name:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="must provide the country",
+            )
+
+        if country_name not in countries:
+            return render_template(
+                "profile.html",
+                username=user["username"],
+                countries=countries,
+                selected_country=selected_country_name,
+                error="Invalid country name",
+            )
+
+        country_code = countrycode(country_name, origin="country.name.en.regex", destination="iso3c")[0]
+        db.execute("UPDATE users SET country = ? WHERE id = ?", country_code, session["user_id"])
+
+        return render_template(
+            "profile.html",
+            username=user["username"],
+            countries=countries,
+            selected_country=country_name,
+            success="Country updated successfully",
+        )
+
+    return render_template(
+        "profile.html",
+        username=user["username"],
+        countries=countries,
+        selected_country=selected_country_name,
+        error="Invalid action",
+    )

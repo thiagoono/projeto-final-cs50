@@ -41,6 +41,29 @@
                                             </div>
                                         {% endfor %}
                                     </div>
+                                    {% if pending_task %}
+                                        <p class="small text-danger-emphasis mt-3 mb-2">You can still save this edit even with overlaps.</p>
+                                        <form action="/recurring_tasks" method="post" class="d-flex flex-wrap gap-2 align-items-center">
+                                            <input type="hidden" name="task_id" value="{{ pending_task.task_id }}">
+                                            <input type="hidden" name="title" value="{{ pending_task.title }}">
+                                            <input type="hidden" name="description" value="{{ pending_task.description or '' }}">
+                                            <input type="hidden" name="start_time" value="{{ pending_task.start_time }}">
+                                            <input type="hidden" name="end_time" value="{{ pending_task.end_time }}">
+                                            <input type="hidden" name="recurrency" value="{{ pending_task.recurrency }}">
+                                            <input type="hidden" name="action" value="edit">
+                                            <input type="hidden" name="force_conflict" value="1">
+                                            {% if pending_task.recurrency == 'weekly' %}
+                                                {% for day in pending_task.repeat_days %}
+                                                    <input type="hidden" name="repeat_days_week" value="{{ day }}">
+                                                {% endfor %}
+                                            {% elif pending_task.recurrency == 'monthly' %}
+                                                {% for day in pending_task.repeat_days %}
+                                                    <input type="hidden" name="repeat_days_month" value="{{ day }}">
+                                                {% endfor %}
+                                            {% endif %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Force edit anyway</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endif %}
